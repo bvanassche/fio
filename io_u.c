@@ -1419,8 +1419,10 @@ static struct fio_file *get_next_file_rand(struct thread_data *td,
 		if (!fio_file_open(f)) {
 			int err;
 
-			if (td->nr_open_files >= td->o.open_files)
-				return ERR_PTR(-EBUSY);
+			while (td->nr_open_files >= td->o.open_files) {
+				if (!fio_close_idle_file(td))
+					return ERR_PTR(-EBUSY);
+			}
 
 			err = td_io_open_file(td, f);
 			if (err)
@@ -1464,8 +1466,10 @@ static struct fio_file *get_next_file_rr(struct thread_data *td, int goodf,
 		if (!fio_file_open(f)) {
 			int err;
 
-			if (td->nr_open_files >= td->o.open_files)
-				return ERR_PTR(-EBUSY);
+			while (td->nr_open_files >= td->o.open_files) {
+				if (!fio_close_idle_file(td))
+					return ERR_PTR(-EBUSY);
+			}
 
 			err = td_io_open_file(td, f);
 			if (err) {

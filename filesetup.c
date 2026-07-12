@@ -1662,6 +1662,22 @@ void close_files(struct thread_data *td)
 	}
 }
 
+bool fio_close_idle_file(struct thread_data *td)
+{
+	struct fio_file *f;
+	unsigned int i;
+
+	for_each_file(td, f, i) {
+		if (fio_file_open(f) && f->references == 1 && !fio_file_closing(f)) {
+			dprint(FD_FILE, "close idle file %s\n", f->file_name);
+			td_io_close_file(td, f);
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void fio_file_free(struct fio_file *f)
 {
 	if (fio_file_axmap(f))
