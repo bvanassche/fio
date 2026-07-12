@@ -40,20 +40,24 @@ static inline void clear_error(struct thread_data *td)
 static int native_fallocate(struct thread_data *td, struct fio_file *f)
 {
 	bool success;
+	int err = 0;
 
 	success = fio_fallocate(f, 0, f->real_file_size);
+	if (!success)
+		err = errno;
+
 	dprint(FD_FILE, "native fallocate of file %s size %llu was "
 			"%ssuccessful\n", f->file_name,
 			(unsigned long long) f->real_file_size,
 			!success ? "un": "");
 
 	if (success)
-		return false;
+		return 0;
 
-	if (errno == ENOSYS)
+	if (err == ENOSYS)
 		dprint(FD_FILE, "native fallocate is not implemented\n");
 
-	return true;
+	return err;
 }
 
 static void fallocate_file(struct thread_data *td, struct fio_file *f)
@@ -63,7 +67,12 @@ static void fallocate_file(struct thread_data *td, struct fio_file *f)
 
 	switch (td->o.fallocate_mode) {
 	case FIO_FALLOCATE_NATIVE:
-		native_fallocate(td, f);
+		if (native_fallocate(td, f) == ENOSYS) {
+			dprint(FD_FILE, "native fallocate not supported, falling back to truncate\n");
+			if (ftruncate(f->fd, f->real_file_size) == -1) {
+				td_verror(td, errno, "ftruncate");
+			}
+		}
 		break;
 	case FIO_FALLOCATE_NONE:
 		break;
