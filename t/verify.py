@@ -70,7 +70,7 @@ class VerifyTest(FioJobCmdTest):
 
         fio_args = [
             "--name=verify",
-            "--fallocate=truncate",
+            "--fallocate=native",
             f"--ioengine={self.fio_opts['ioengine']}",
             f"--rw={self.fio_opts['rw']}",
             f"--verify={self.fio_opts['verify']}",
@@ -123,7 +123,7 @@ class VerifyCSUMTest(FioJobCmdTest):
 
         logging.debug("ioengine is %s", self.fio_opts['ioengine'])
         fio_args_base = [
-            "--fallocate=truncate",
+            "--fallocate=native",
             "--filename=verify",
             "--stonewall",
             f"--ioengine={self.fio_opts['ioengine']}",
